@@ -1,48 +1,76 @@
 import requests
-import pandas as pd
+from prometheus_client import start_http_server, Gauge
+import time
+from datetime import datetime, date
 
 # Alpha Vantage API key and endpoint
 api_key = '9PK66JDA4OWZL96N'
 symbols = ['DIS', 'GE', 'HD', 'TSLA']
 
+# Prometheus metric
+total_daily_profit_metric = Gauge('total_daily_profit', 'Total daily profit for all symbols')
+
 def updateTotalDailyProfit(symbol, total_profit_daily, curr_stock_price):
     if symbol == "DIS":
-        total_profit_daily += 28 * curr_stock_price
+        amt = 28 * curr_stock_price
+        print(f"Present worth of Disney's shares: {amt}")
+        total_profit_daily += amt
     elif symbol == "GE":
-        total_profit_daily += 20 * curr_stock_price
+        amt = 20 * curr_stock_price
+        print(f"Present worth of General Electric shares: {amt}")
+        total_profit_daily += amt
     elif symbol == "HD":
-        total_profit_daily += 7 * curr_stock_price
+        amt = 7 * curr_stock_price
+        print(f"Present worth of Home Depot shares: {amt}")
+        total_profit_daily += amt
     elif symbol == "TSLA":
-        total_profit_daily += 10 * curr_stock_price
+        amt = 10 * curr_stock_price
+        print(f"Present worth of Tesla's shares: {amt}")
+        total_profit_daily += amt
     return total_profit_daily
 
-total_profit_daily = 0.0
-for symbol in symbols:
-    url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}'
-    response = requests.get(url)
+def scrape_data():
+    total_profit_daily = 0.0
 
-    if response.status_code == 200:
-        data = response.json()
+    # Load the last push date from a file
+    try:
+        with open("last_push_date.txt", "r") as file:
+            last_push_date_str = file.read().strip()
+            last_push_date = datetime.strptime(last_push_date_str, "%Y-%m-%d").date()
+    except FileNotFoundError:
+        last_push_date = None
 
-        #print(data)
+    # Check if the metric has been pushed today
+    if last_push_date is not None and last_push_date == date.today():
+        print("Metric already pushed today. Skipping.")
+        return
 
-        #Extract daily stock prices (close prices)
+    for symbol in symbols:
+        url = f'https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={symbol}&apikey={api_key}'
+        response = requests.get(url)
 
-        prices = {date: float(value['4. close']) for date, value in data['Time Series (Daily)'].items()}
+        if response.status_code == 200:
+            data = response.json()
 
-        df = pd.DataFrame(list(prices.items()), columns=['Date', 'Close'])
-        df['Date'] = pd.to_datetime(df['Date'])
+            latest_date = next(iter(data['Time Series (Daily)'].keys()))
+            curr_stock_price = float(data['Time Series (Daily)'][latest_date]['4. close'])
+            print(f"Current Stock Price For {symbol}: {curr_stock_price}")
+            total_profit_daily = updateTotalDailyProfit(symbol, total_profit_daily, curr_stock_price)
 
-        #Determine current stock price for company
-        curr_stock_price = list(prices.items())[0][1]
-        
-        total_profit_daily = updateTotalDailyProfit(symbol, total_profit_daily, curr_stock_price)
-        
-        # Display the DataFrame
-        print(f"Stock Prices for {symbol}: '\n'")
-        print(df)
-    else:
-        print(f"Error in API request for {symbol}. Status code: {response.status_code}")
-        continue
-print("--------------'\n'")
-print(f"Total Daily Profit: {total_profit_daily}")
+        else:
+            print(f"Error in API request for {symbol}. Status code: {response.status_code}")
+            continue
+
+    print("--------------'\n'")
+    print(f"Total Daily Profit: {total_profit_daily}")
+
+    # Update Prometheus metric
+    total_daily_profit_metric.set(total_profit_daily)
+
+    # Save the current date to the file
+    with open("last_push_date.txt", "w") as file:
+        file.write(str(date.today()))
+
+if __name__ == '__main__':
+    start_http_server(8000)
+    scrape_data()
