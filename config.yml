@@ -16,5 +16,6 @@ scheduler:
   interval_minutes: 30
 cache:
   ttl_days: 1
+  ttl_minutes: 29
 rate_limit:
   max_calls_per_min: 5
