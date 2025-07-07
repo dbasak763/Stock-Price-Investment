@@ -29,11 +29,16 @@ def load_config():
         exit(1)
 
     # Override API key from environment variable if available
-    api_key = os.getenv('ALPHA_VANTAGE_API_KEY')
+    api_key = os.getenv('FINNHUB_API_KEY')
     if api_key:
-        config['api_key'] = api_key
-    elif 'api_key' not in config or config['api_key'] == 'YOUR_API_KEY':
-        logging.error("API key not found. Please set it in config.yml or as ALPHA_VANTAGE_API_KEY env var.")
+        if 'finnhub' not in config:
+            config['finnhub'] = {}
+        config['finnhub']['api_key'] = api_key
+
+    # Validate that the API key is set
+    finnhub_config = config.get('finnhub', {})
+    if not finnhub_config.get('api_key') or 'YOUR_API_KEY' in str(finnhub_config.get('api_key')) or '${FINNHUB_API_KEY}' in str(finnhub_config.get('api_key')):
+        logging.error("Finnhub API key not found or is invalid. Please set it in your .env file as FINNHUB_API_KEY=YOUR_KEY.")
         exit(1)
         
     return config
@@ -43,7 +48,7 @@ def run_job():
     logging.info("Starting scheduled job to fetch and store stock prices.")
     try:
         config = load_config()
-        # 1. Fetch data from Alpha Vantage
+        # 1. Fetch data from Finnhub
         raw_data = fetch_all_symbols(config)
 
         # 2. Export raw price data to InfluxDB
@@ -75,9 +80,9 @@ def main():
     # Schedule the job
     scheduler = BackgroundScheduler()
     # Get scheduler interval from config, with a safe default
-    interval_hours = config.get('scheduler', {}).get('interval_hours', 8)
-    scheduler.add_job(run_job, 'interval', hours=interval_hours, misfire_grace_time=600)
-    logging.info(f"Job scheduled to run every {interval_hours} hours.")
+    interval_hours = config.get('scheduler', {}).get('interval_minutes', 30)
+    scheduler.add_job(run_job, 'interval', minutes=interval_minutes, misfire_grace_time=600)
+    logging.info(f"Job scheduled to run every {interval_minutes} minutes.")
     scheduler.start()
     logging.info("Scheduler started. First job will run on start.")
 
