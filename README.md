@@ -21,9 +21,9 @@ A full-stack application to track real-time stock prices, featuring a Python bac
 
 2.  **Set up your environment:**
 
-    Create a `.env` file in the root directory and add your Alpha Vantage API key:
+    Create a `.env` file in the root directory and add your Finnhub API key:
     ```
-    ALPHA_VANTAGE_API_KEY=YOUR_API_KEY
+    FINNHUB_API_KEY=YOUR_API_KEY
     ```
 
 3.  **Run with Docker Compose:**
@@ -33,17 +33,17 @@ A full-stack application to track real-time stock prices, featuring a Python bac
 
 ## Important: API Rate Limits
 
-Alpha Vantage provides a free API for accessing financial data, but it comes with a strict rate limit. The standard free tier is limited to **25 requests per day**.
+The application uses the Finnhub API to fetch stock data. You will need a free API key from their website.
 
 Each time the application's scheduled job runs, it makes one API request *per stock symbol* listed in your `config.yml`. To stay within the free limit, you must balance the number of symbols you track with the frequency of updates.
 
 ### Configuring the Update Frequency
 
-The data fetch interval is configurable in `config.yml`. You can adjust the `interval_hours` under the `scheduler` section. The default is set to 8 hours, which allows you to track up to 8 different stocks without exceeding the daily limit (8 symbols * 3 updates/day = 24 requests).
+The data fetch interval is configurable in `config.yml`. You can adjust the `interval_minutes` under the `scheduler` section. The default is set to 30 minutes, so the application will fetch new data every 30 minutes.
 
 ```yaml
 scheduler:
-  interval_hours: 4 # Set how often to fetch new data
+  interval_minutes: 30 # Set how often to fetch new data
 ```
 
 Be mindful of this limit when adding more symbols or decreasing the interval.
