@@ -1,0 +1,19 @@
+# config.yml
+api_key: ${ALPHA_VANTAGE_API_KEY}
+symbols:
+  - AAPL
+  - GOOGL
+  - MSFT
+  - AMZN
+
+influxdb:
+  url: http://influxdb:8086
+  token: my-super-secret-token
+  org: my-org
+  bucket: my-bucket
+scheduler:
+  interval_hours: 8
+cache:
+  ttl_days: 1
+rate_limit:
+  max_calls_per_min: 5

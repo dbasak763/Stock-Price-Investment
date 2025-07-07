@@ -1,0 +1,14 @@
+requests
+influxdb-client
+Flask
+PyYAML
+pandas
+plotly
+apscheduler
+gunicorn
+
+# Testing & Linting
+pytest
+pytest-cov
+requests-mock
+flake8
