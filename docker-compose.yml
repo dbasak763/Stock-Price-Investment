@@ -13,7 +13,7 @@ services:
       context: .
     # Port is no longer exposed directly to host
     environment:
-      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY}
+      - FINNHUB_API_KEY=${FINNHUB_API_KEY}
     volumes:
       - ./data:/app/data
       - ./cache:/app/cache
