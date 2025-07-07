@@ -32,62 +32,43 @@ def fetch_stock_data(symbol, api_key, rate_limit_config):
         with open(cache_path, 'r') as f:
             return json.load(f)
 
-    logging.info(f"Fetching {symbol} data from API.")
-    url = f'https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={symbol}&apikey={api_key}'
+    logging.info(f"Fetching {symbol} data from Finnhub API.")
     
-    max_retries = 3
-    backoff_factor = 2
-    for attempt in range(max_retries):
-        try:
-            response = requests.get(url)
-            response.raise_for_status() # Raises HTTPError for bad responses (4xx or 5xx)
-
-            # Check for Alpha Vantage specific error message
-            data = response.json()
-            if "Error Message" in data:
-                logging.error(f"API returned an error for {symbol}: {data['Error Message']}")
-                return None
-            if "Information" in data:
-                logging.warning(f"API call for {symbol} has an informational message: {data['Information']}")
-                # This could indicate a rate limit warning, so we slow down.
-                time.sleep(60 / rate_limit_config.get('max_calls_per_min', 5))
-
-            if "Note" in data:
-                logging.warning(f"API call for {symbol} has a note: {data['Note']}")
-                # This could indicate a rate limit warning, so we slow down.
-                time.sleep(60 / rate_limit_config.get('max_calls_per_min', 5))
-
-            with open(cache_path, 'w') as f:
-                json.dump(data, f)
-            
-            return data
-
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 429 and attempt < max_retries - 1:
-                sleep_time = backoff_factor ** attempt
-                logging.warning(f"Rate limit hit for {symbol}. Retrying in {sleep_time} seconds...")
-                time.sleep(sleep_time)
-            else:
-                logging.error(f"HTTP error fetching {symbol}: {e}")
-                return None
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Request failed for {symbol}: {e}")
+    try:
+        finnhub_client = finnhub.Client(api_key=api_key)
+        quote = finnhub_client.quote(symbol)
+        
+        if 'c' not in quote or quote['c'] == 0:
+            logging.warning(f"No current price data for {symbol} from Finnhub. Response: {quote}")
             return None
-    
-    return None
+
+        transformed_data = {
+            "Global Quote": {
+                "01. symbol": symbol,
+                "05. price": str(quote['c'])
+            }
+        }
+
+        with open(cache_path, 'w') as f:
+            json.dump(transformed_data, f)
+            
+        return transformed_data
+
+    except Exception as e:
+        logging.error(f"Failed to fetch data for {symbol} from Finnhub: {e}")
+        return None
 
 def fetch_all_symbols(config):
     """Fetches data for all symbols listed in the config."""
-    api_key = config['api_key']
+    api_key = config['finnhub']['api_key']
     symbols = config.get('symbols', [])
-    rate_limit_config = config.get('rate_limit', {})
+    rate_limit_delay = 1 #60 calls/min rate limit, so 1 sec delay is safe
     all_data = {}
 
     for symbol in symbols:
-        data = fetch_stock_data(symbol, api_key, rate_limit_config)
+        data = fetch_stock_data(symbol, api_key)
         if data:
             all_data[symbol] = data
-        # Respect the API rate limit between different symbols
-        time.sleep(60 / rate_limit_config.get('max_calls_per_min', 5))
+        time.sleep(rate_limit_delay)
 
     return all_data
