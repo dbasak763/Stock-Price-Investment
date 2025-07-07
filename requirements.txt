@@ -6,6 +6,7 @@ pandas
 plotly
 apscheduler
 gunicorn
+finnhub-python
 
 # Testing & Linting
 pytest
