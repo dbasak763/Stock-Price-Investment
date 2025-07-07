@@ -1,8 +1,3 @@
-Stock-Price-Investment
-[![Build Status](https://github.com/your-username/Stock-Price-Investment/actions/workflows/ci.yml/badge.svg)](https://github.com/your-username/Stock-Price-Investment/actions)
-[![Coverage](https://coveralls.io/repos/github/your-username/Stock-Price-Investment/badge.svg)](https://coveralls.io/github/your-username/Stock-Price-Investment)
-[![Docker Pulls](https://img.shields.io/docker/pulls/your-username/stock-invest.svg)](https://hub.docker.com/r/your-username/stock-invest)
-
 # Stock-Price-Investment
 
 A full-stack application to track real-time stock prices, featuring a Python backend, a React frontend, and InfluxDB for time-series data storage.
