@@ -9,6 +9,7 @@ function App() {
     const [priceData, setPriceData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [timeRange, setTimeRange] = useState('All'); // New state for time range
 
     // Fetch the list of available symbols on component mount
     useEffect(() => {
@@ -34,12 +35,12 @@ function App() {
         fetchSymbolsWithRetry();
     }, []);
 
-    // Fetch price data whenever the selected symbol changes
+    // Fetch price data whenever the selected symbol or time range changes
     useEffect(() => {
         if (selectedSymbol) {
             setLoading(true);
             setError('');
-            axios.get(`/api/prices?symbol=${selectedSymbol}`)
+            axios.get(`/api/prices?symbol=${selectedSymbol}&range=${timeRange}`) // Add range to API call
                 .then(response => {
                     setPriceData(response.data);
                     setLoading(false);
@@ -50,7 +51,9 @@ function App() {
                     setLoading(false);
                 });
         }
-    }, [selectedSymbol]);
+    }, [selectedSymbol, timeRange]); // Add timeRange to dependency array
+
+    const timeRanges = ['1D', '7D', '1M', '6M', '1Y', 'All'];
 
     return (
         <div className="App">
@@ -69,6 +72,17 @@ function App() {
                         <option key={symbol} value={symbol}>{symbol}</option>
                     ))}
                 </select>
+            </div>
+            <div className="time-range-selector">
+                {timeRanges.map(range => (
+                    <button 
+                        key={range} 
+                        className={timeRange === range ? 'active' : ''}
+                        onClick={() => setTimeRange(range)}
+                    >
+                        {range}
+                    </button>
+                ))}
             </div>
             <div className="chart-container">
                 {loading && <p>Loading chart data...</p>}
