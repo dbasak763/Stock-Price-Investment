@@ -1,5 +1,6 @@
 # config.yml
-api_key: ${ALPHA_VANTAGE_API_KEY}
+finnhub:
+  api_key: "${FINNHUB_API_KEY}"
 symbols:
   - AAPL
   - GOOGL
@@ -12,7 +13,7 @@ influxdb:
   org: my-org
   bucket: my-bucket
 scheduler:
-  interval_hours: 8
+  interval_minutes: 30
 cache:
   ttl_days: 1
 rate_limit:
