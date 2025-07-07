@@ -21,9 +21,21 @@ def get_symbols():
 def get_prices():
     """Return historical price data for a given symbol from InfluxDB."""
     symbol = request.args.get('symbol')
+    time_range = request.args.get('range', 'All') # Default to 'All'
     if not symbol:
         return jsonify({"error": "'symbol' parameter is required"}), 400
-
+        
+    # Map frontend range to InfluxDB duration
+    range_map = {
+        '1D': '-1d',
+        '7D': '-7d',
+        '1M': '-30d',
+        '6M': '-180d', # approx 6 months
+        '1Y': '-1y',
+        'All': '0' # InfluxDB '0' means from the beginning of time
+    }
+    
+    influx_range = range_map.get(time_range, '0') # Default to 'All' if range is invalid
     try:
         with InfluxDBClient(url=influx_config['url'], token=influx_config['token'], org=influx_config['org']) as client:
             query_api = client.query_api()
